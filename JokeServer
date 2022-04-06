@@ -1,0 +1,284 @@
+/*--------------------------------------------------------
+
+1. Name / Date: Elizabeth Pavlicek 9/26/20121
+
+
+2. Java version used (java -version), if not the official version for the class: I used amazon-corretto-11 version.
+
+3. Precise command-line compilation examples / instructions:
+javac JokeServer.java
+java JokeServer
+
+4. Precise examples / instructions to run this program:
+In seperate shell windows run:
+java JokeClient
+java JokeServer
+java JokeAdminClient
+
+the order should not matter but they must be in seperate windows.
+
+
+5. List of files needed for running the program.
+ JokeLog.txt
+ JokeChecklist.html
+ For running:
+ JokeServer.java
+ JokeClient.java
+ JokeAdminClient.java
+
+5. Notes:
+I was not able to get all jokes to be seen just once before going through
+the cycle again.  However, I was able to get them to randomize.
+
+
+----------------------------------------------------------*/
+
+import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import java.net.*;
+import java.io.PrintStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.*;
+import java.util.ArrayList;
+import java.util.Random;
+
+public class JokeServer {
+
+    //This string will be used by the server in order to know what mode it is in
+	//JM = joke mode, PM = proverb mode, AM= admin mode
+	//Will change to reflect the mode that it is in
+	public static String jpaMode="JM";
+	public static boolean tt =true;
+	
+	public static void main(String[] args) throws IOException {
+		
+		int q_len=6;
+		int port =4545;
+		Socket sock; //Setting up the socket to go through
+		
+		AdminLooper AL= new AdminLooper();	//new thread setup to listen for jserver to listen to the adminlooper
+		Thread t=new Thread(AL);
+		t.start();	//starting the admin looper thread for server to listen to
+		
+		ServerSocket serversock =new ServerSocket(port, q_len); //setting up socket for client to go through
+		//this will be printed out on the server once it has been started
+		System.out.println("Elizabeth Pavlicek's Joke Server 1 starting up, listening at port 4545.\n");
+		while(tt){
+			 sock=serversock.accept(); //client socket is being accepted here
+			 new workerThread(sock).start();	//worker is being started here
+		}serversock.close();
+	}
+}
+
+class workerThread extends Thread {
+	Socket sock;
+
+	private static String Uname; //initializing the string that the clients name will be stored in
+	
+	workerThread (Socket s) {sock =s;} //assigning s to the workerThread socket
+	
+	PrintStream out = null; 
+	BufferedReader in = null;
+	public void run(){
+		try{
+			
+			in=new BufferedReader (new InputStreamReader(sock.getInputStream()));
+			out=new PrintStream(sock.getOutputStream());
+			
+			try {
+				String name=in.readLine(); //getting the name from client which will be inputted into grabTheJP()
+				
+				grabTheJP(name, out); //sending to grabTheJP() to find a j/p to tell
+							
+			}catch (IOException x){
+				System.out.println("ERROR!!!"); //some type of error has occured
+				x.printStackTrace();
+			}
+			sock.close(); //closing up the socket
+		}catch(IOException ioe) {System.out.println(ioe);}
+	}
+
+	//coming from SendtoJokeServ():
+	static void grabTheJP(String name, PrintStream out) {
+		Uname=""; //Making the clients name empty
+		Uname= name; //getting clients name from jclient and putting it into string to be used in the jokes and proverbs
+		
+		if (JokeServer.jpaMode == "JM"){ 
+				String tellTheJoke = tellJOKE(); //going to joke selection to find one to tell
+				out.println(tellTheJoke); //giving client the joke
+		}
+		
+		else if (JokeServer.jpaMode == "PM") {
+				
+				String tellTheProverb = tellPROVERB(); //going to proverb selection to find one to tell
+				out.println(tellTheProverb); //giving client the proverb
+			
+		}else { //if jpaMode = AM 
+			out.print("The Server is in ADMIN MODE. For a Joke please type 1. For a Proverb please type 2.");
+		}
+
+	}
+
+	static String tellJOKE(){
+
+		//This was going to be used to reset the jokes but unfortunately I was not able to implement it*/
+		/*int jTracker[] = {0,0,0,0};
+		int trackerCompareTo[] =  {1,1,1,1};
+		if(jTracker.equals(trackerCompareTo)) {
+			jTracker[0] = 0;
+			jTracker[1] = 0;
+			jTracker[2] = 0;
+			jTracker[3] = 0;
+		}*/
+		
+		//method that randomizes the jokes for me
+		Random r = new Random();
+		int rNum= r.nextInt((3-0)+1)+0; 
+		String tellJoke = ""; //setting up the string that will hold the joke that is chosen by the randomizer
+        //this loop should keep running until is finds the rNum that corrisponds to the joke
+		while(true) {
+			switch(rNum) { //input rNum 
+			case 0: //random number = 0 //Joke from upjoke.com
+				tellJoke = Uname+": Your Joke is JA: Why do Java programmers have to wear glasses? Because they don't C#";
+				return tellJoke;
+				//break;
+		
+			case 1: //random number = 1 //Joke JB from upjoke.com
+				tellJoke = Uname+": Your Joke is JB: What do you drink when you program? A cup of Java.";
+				return tellJoke;
+				//break;
+		 
+			case 2: //random number = 2 	//Joke JC from beano.com
+				tellJoke= Uname+": Your Joke is JC: My dog ate my computer science project... It only took him a few bytes";
+				return tellJoke;
+				//break;
+			case 3://random number = 3 	//Joke JD from beano.com
+				tellJoke= Uname+": Your Joke is JD: What kind of money do computer scientists use? Cache!";
+				return tellJoke;
+				//break;
+	
+			}
+		}
+	}
+		
+	
+	
+	static String tellPROVERB(){
+		
+		//Proverbs from lemongrad.com
+		//This was going to be used to reset the proverbs but unfortunately I was not able to implement it
+		/*int pTracker[] = {0,0,0,0};
+		int trackerCompareTo[] =  {1,1,1,1};
+		if(pTracker.equals(trackerCompareTo)) {
+			pTracker[0] = 0;
+			pTracker[1] = 0;
+			pTracker[2] = 0;
+			pTracker[3] = 0;
+		}*/
+		
+		//method that randomizes the jokes for me
+		Random r = new Random();
+		int rNum= r.nextInt((3-0)+1)+0;//choosing a random number from 0-3 and putting it in the in rNUM
+		String tellProverb = ""; //setting up the string that will hold the proverb that is chosen by the randomizer
+		//this loop should keep running until is finds the rNum that corrisponds to the proverb
+		while(true) {
+			switch(rNum) { //input rNum
+			case 0: //random number = 0
+				tellProverb = Uname+":  Your proverb is PA: An idle brain is the devil's workshop.";//Proverb from lemongrad.com
+				return tellProverb;
+				//break;
+		
+			case 1: //random number = 1
+				tellProverb = Uname+": Your proverb is PB: Curiosity killed the cat."; //Proverb from lemongrad.com
+				return tellProverb;
+				//break;
+		 
+			case 2: //random number = 2
+				tellProverb= Uname+": Your proverb is PC: Good things come to those who wait."; //Proverb from lemongrad.com
+				return tellProverb;
+				//break;
+			case 3: //random number = 3
+				tellProverb= Uname+": Your proverb is PD: Honesty is the best policy."; //Proverb from lemongrad.com
+				return tellProverb;
+				//break;
+			}
+		}
+	}
+}
+
+class AdminLooper implements Runnable{
+	static boolean t =true;
+	
+	public void run(){ // admin loop running
+		System.out.println("Now in the admin looper thread");
+		int q_len=6;
+		int port=5050;
+		Socket sock;
+		try{
+			ServerSocket servsock= new ServerSocket(port,q_len);
+			while(t){
+				sock=servsock.accept();
+				new AdminWorker(sock).start();
+			}servsock.close();
+		}catch(IOException ioe) {System.out.println(ioe);} //catch any errors that may have occured
+	}
+}
+
+class AdminWorker extends Thread{
+	Socket sock;
+	AdminWorker(Socket s) {sock =s;} //assigning s to the AdminWorker socket
+	
+	public void run(){
+		PrintStream out =null;
+		BufferedReader in =null;
+		
+		try{
+			in =new BufferedReader(new InputStreamReader(sock.getInputStream()));
+			out=new PrintStream(sock.getOutputStream());
+		
+			try {
+				String jpamode; //initializing the string that will hold what mode the user is asking to switch to.
+				jpamode=in.readLine(); //reading what user has inputed into the adminclient to switch mode
+				switch(jpamode) { //inserting mode client chose to switch to
+				// 1= client asked for joke mode, 2= client asked for proverb mode, 3= client asked for admin mode.
+				case "1": //Client asked for joke mode
+					JokeServer.jpaMode="JM"; //updating the string to tell server what mode we are in
+					//telling client, server and admin client that the mode has been changed
+					System.out.println("IN JOKE MODE");
+					out.println("IN JOKE MODE");
+					out.println("IN JOKE MODE");	
+					break; //needed to add break because it would continue onto the other cases and then be in admin mode even if joke or proverb was chosen.
+				
+				case "2": //Client asked for proverb mode
+					JokeServer.jpaMode="PM"; //updating the string to tell server what mode we are in
+					//telling client, server and admin client that the mode has been changed
+					System.out.println("IN PROVERB MODE");
+					out.println("IN PROVERB MODE");
+					out.println("IN PROVERB MODE");	
+					break;
+				
+				case "3": //Client asked for admin mode
+					JokeServer.jpaMode="AM"; //updating the string to tell server what mode we are in
+					//telling client, server and admin client that the mode has been changed
+					System.out.println("IN ADMIN MODE");
+					out.println("IN ADMIN MODE");
+					out.println("IN ADMIN MODE");
+					break;
+				default: //added this default incase client typed anything other than 1,2, or 3 to tell them that it must be 1,2, or 3
+					out.println("Whoops! Input not valid. Please enter 1, 2, or 3");
+				
+				}
+			
+			}catch(IOException x){ 
+				System.out.println("ERROR"); //letting know if there is an error
+				x.printStackTrace();
+			}
+			sock.close(); // closing the socket
+		}catch (IOException ioe){System.out.println(ioe);}
+	}
+}
